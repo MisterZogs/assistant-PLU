@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# Env
+.env
+
+# Cache PDF PLU (fichiers lourds)
+cache/pdfs/
+
+# Tests output
+tests/*.pdf
+
+# Local scripts
+auto-commit.sh
+
+# Claude Code local settings
+.claude/
+
+# IDE
+.DS_Store
+.idea/
+.vscode/
