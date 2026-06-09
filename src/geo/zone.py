@@ -90,15 +90,22 @@ def _find_zone_in_shp(
 # ── Fonctions principales ─────────────────────────────────────────────────────
 
 async def get_plu_document(code_insee: str) -> DocUrba:
-    """Récupère les métadonnées PLU d'une commune via wfs_du:doc_urba."""
+    """
+    Récupère les métadonnées PLU/PLUi d'une commune.
+
+    Stratégie en deux temps :
+    1. wfs_du:doc_urba_com (par code INSEE) → supporte les PLUi intercommunaux
+    2. Fallback : wfs_du:doc_urba (par partition DU_{code_insee}) pour PLU simples
+    """
+    # Étape 1 : doc_urba_com mappe INSEE → document (PLU ou PLUi)
     params = {
         "SERVICE": "WFS",
         "VERSION": "2.0.0",
         "REQUEST": "GetFeature",
-        "TYPENAMES": "wfs_du:doc_urba",
+        "TYPENAMES": "wfs_du:doc_urba_com",
         "outputFormat": "application/json",
-        "CQL_FILTER": f"partition='DU_{code_insee}'",
-        "count": "20",
+        "CQL_FILTER": f"insee='{code_insee}'",
+        "count": "5",
     }
     url = WFS_URL + "?" + urllib.parse.urlencode(params)
 
@@ -108,29 +115,81 @@ async def get_plu_document(code_insee: str) -> DocUrba:
         data = resp.json()
 
     features = data.get("features", [])
-    if not features:
+    if features:
+        # Priorité aux documents en production
+        production = [
+            f for f in features if f["properties"].get("gpu_status") == "production"
+        ]
+        feat = (production or features)[0]
+        p = feat["properties"]
+        # Récupérer nomreg depuis doc_urba avec la partition connue
+        nomreg = await _get_nomreg(p.get("partition", ""), client=None)
+        return DocUrba(
+            gpu_doc_id=p.get("gpu_doc_id", ""),
+            idurba=p.get("idurba", ""),
+            partition=p.get("partition", ""),
+            typedoc=p.get("idurba", "").split("_")[1] if "_" in p.get("idurba", "") else "",
+            datappro=p.get("idurba", "").rsplit("_", 1)[-1],
+            nomreg=nomreg,
+        )
+
+    # Étape 2 : fallback sur doc_urba direct (communes sans doc_urba_com)
+    params2 = dict(params)
+    params2["TYPENAMES"] = "wfs_du:doc_urba"
+    params2["CQL_FILTER"] = f"partition='DU_{code_insee}'"
+    params2["count"] = "10"
+    url2 = WFS_URL + "?" + urllib.parse.urlencode(params2)
+
+    async with httpx.AsyncClient(timeout=15) as client:
+        resp2 = await client.get(url2)
+        resp2.raise_for_status()
+        data2 = resp2.json()
+
+    features2 = data2.get("features", [])
+    if not features2:
         raise ZoneError(
             f"Aucun document PLU trouvé pour la commune {code_insee} sur le GPU. "
             "La commune n'a peut-être pas de PLU numérisé."
         )
 
-    # Priorité : PLU/PLUi en statut production ; sinon premier résultat
     plu = [
-        f for f in features
+        f for f in features2
         if f["properties"].get("typedoc") in ("PLU", "PLUi", "PLUm")
     ]
-    production = [f for f in plu if f["properties"].get("gpu_status") == "production"]
-    feat = (production or plu or features)[0]
-    p = feat["properties"]
+    production2 = [f for f in plu if f["properties"].get("gpu_status") == "production"]
+    feat2 = (production2 or plu or features2)[0]
+    p2 = feat2["properties"]
 
     return DocUrba(
-        gpu_doc_id=p.get("gpu_doc_id", ""),
-        idurba=p.get("idurba", ""),
-        partition=p.get("partition", ""),
-        typedoc=p.get("typedoc", ""),
-        datappro=p.get("datappro", ""),
-        nomreg=p.get("nomreg", ""),
+        gpu_doc_id=p2.get("gpu_doc_id", ""),
+        idurba=p2.get("idurba", ""),
+        partition=p2.get("partition", ""),
+        typedoc=p2.get("typedoc", ""),
+        datappro=p2.get("datappro", ""),
+        nomreg=p2.get("nomreg", ""),
     )
+
+
+async def _get_nomreg(partition: str, client=None) -> str:
+    """Récupère le nom du fichier règlement depuis wfs_du:doc_urba pour une partition."""
+    params = {
+        "SERVICE": "WFS",
+        "VERSION": "2.0.0",
+        "REQUEST": "GetFeature",
+        "TYPENAMES": "wfs_du:doc_urba",
+        "outputFormat": "application/json",
+        "CQL_FILTER": f"partition='{partition}'",
+        "count": "5",
+    }
+    url = WFS_URL + "?" + urllib.parse.urlencode(params)
+    async with httpx.AsyncClient(timeout=15) as c:
+        resp = await c.get(url)
+        resp.raise_for_status()
+        data = resp.json()
+    feats = data.get("features", [])
+    if feats:
+        return feats[0]["properties"].get("nomreg", "")
+    return ""
 
 
 async def identifier_zone(
