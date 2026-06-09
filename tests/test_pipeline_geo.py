@@ -35,18 +35,18 @@ async def test_geocodage_adresse_inconnue():
 @pytest.mark.asyncio
 async def test_identification_zone_biarritz():
     # Coordonnées du centre de Biarritz
-    zone = await identifier_zone(lon=-1.5601, lat=43.4832)
+    zone = await identifier_zone(lon=-1.5601, lat=43.4832, code_insee="64122")
     assert zone.gpu_doc_id != ""
     assert zone.type_zone in ("U", "AU", "A", "N")
     assert zone.libelle != ""
-    assert "64122" in zone.partition
+    assert "64122" in zone.id_urba
 
 
 @pytest.mark.asyncio
 async def test_identification_zone_mer():
-    # Milieu de l'Atlantique → doit lever une erreur
+    # Milieu de l'Atlantique → commune inexistante sur le GPU
     with pytest.raises(ZoneError):
-        await identifier_zone(lon=-5.0, lat=45.0)
+        await identifier_zone(lon=-5.0, lat=45.0, code_insee="99999")
 
 
 # ── GPU fichiers ──────────────────────────────────────────────────────────────
