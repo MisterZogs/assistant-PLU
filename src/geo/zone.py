@@ -229,7 +229,7 @@ async def identifier_zone(
         with remotezip.RemoteZip(zip_url) as rz:
             names = rz.namelist()
             shp_entry = next(
-                (n for n in names if "ZONE_URBA" in n and n.endswith(".shp")), None
+                (n for n in names if "zone_urba" in n.lower() and n.endswith(".shp")), None
             )
             if not shp_entry:
                 raise ZoneError(
