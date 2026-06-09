@@ -213,7 +213,7 @@ async def identifier_zone(
       3. Identifie la zone par point-in-polygon (Lambert 93)
     """
     doc = await get_plu_document(code_insee)
-    zip_url = _build_zip_url(doc.gpu_doc_id, doc.partition, doc.idurba)
+    zip_url = await _resolve_zip_url(doc.gpu_doc_id)
 
     # Cache : fichiers SHP par idurba
     cache_path = Path(cache_dir) / doc.idurba
