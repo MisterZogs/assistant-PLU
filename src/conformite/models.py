@@ -3,7 +3,7 @@
 from __future__ import annotations
 from enum import Enum
 from typing import Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 # ── Règles extraites ──────────────────────────────────────────────────────────
@@ -13,6 +13,15 @@ class RegleArticle(BaseModel):
     exceptions: str = ""
     citation: str = ""
     non_applicable: bool = False
+
+    @field_validator("valeur", "exceptions", "citation", mode="before")
+    @classmethod
+    def coerce_to_str(cls, v: object) -> str:
+        if v is None:
+            return ""
+        if isinstance(v, list):
+            return " ".join(str(item) for item in v if item)
+        return str(v)
 
 
 class ReglesZone(BaseModel):
