@@ -54,11 +54,17 @@ class ZoneError(Exception):
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
-def _build_zip_url(gpu_doc_id: str, partition: str, idurba: str) -> str:
-    return (
-        f"https://data.geopf.fr/telechargement/download/pack_plu1/"
-        f"PACK_{partition}_{gpu_doc_id}/{idurba}.zip"
-    )
+GPU_BASE = "https://www.geoportail-urbanisme.gouv.fr"
+
+
+async def _resolve_zip_url(gpu_doc_id: str) -> str:
+    """Résout l'URL du ZIP via la redirection GPU (supporte PLU et PLUi)."""
+    url = f"{GPU_BASE}/api/document/{gpu_doc_id}/download"
+    async with httpx.AsyncClient(timeout=15, follow_redirects=False) as client:
+        resp = await client.get(url)
+    if resp.status_code in (301, 302, 307, 308):
+        return resp.headers["location"]
+    raise ZoneError(f"Impossible d'obtenir l'URL du ZIP pour le document {gpu_doc_id}")
 
 
 def _find_zone_in_shp(
