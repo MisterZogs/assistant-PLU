@@ -21,7 +21,8 @@ async def pipeline_geo(adresse: str, cache_dir: str = "./cache/pdfs") -> Resulta
     Retourne le chemin vers le PDF du règlement écrit de la zone.
     """
     geo = await geocoder_adresse(adresse)
-    zone = await identifier_zone(geo.lon, geo.lat)
-    chemin = await telecharger_reglement(zone.gpu_doc_id, cache_dir)
+    shp_cache = cache_dir.replace("pdfs", "shp")
+    zone = await identifier_zone(geo.lon, geo.lat, geo.code_insee, shp_cache)
+    chemin = await telecharger_reglement(zone.gpu_doc_id, zone.id_urba, cache_dir)
 
     return ResultatPipeline(geocodage=geo, zone=zone, chemin_reglement=chemin)
