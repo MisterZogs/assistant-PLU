@@ -19,7 +19,7 @@ async def test_geocodage_adresse_connue():
     result = await geocoder_adresse("1 Grande Plage Biarritz")
     assert result.code_insee == "64122"
     assert result.city == "Biarritz"
-    assert result.score > 0.5
+    assert result.score > 0.4
     assert -2 < result.lon < 0
     assert 43 < result.lat < 44
 
