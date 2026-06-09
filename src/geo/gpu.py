@@ -39,14 +39,13 @@ def _nom_reglement(fichiers: list[FichierGPU]) -> str | None:
     return None
 
 
-async def _get_zip_url(doc_id: str, nom_pdf: str) -> str:
-    """Résout l'URL de redirection vers le ZIP du document GPU."""
-    url = f"{GPU_BASE}/api/document/{doc_id}/download?name={nom_pdf}&type=file"
+async def _get_zip_url(doc_id: str) -> str:
+    """Résout l'URL du ZIP GPU via redirection (supporte PLU et PLUi)."""
+    url = f"{GPU_BASE}/api/document/{doc_id}/download"
     async with httpx.AsyncClient(timeout=15, follow_redirects=False) as client:
         resp = await client.get(url)
     if resp.status_code in (301, 302, 307, 308):
         return resp.headers["location"]
-    # Si pas de redirection, construire l'URL par convention
     raise GpuError(f"Impossible d'obtenir l'URL du ZIP pour {doc_id}")
 
 
