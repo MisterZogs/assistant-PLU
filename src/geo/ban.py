@@ -37,9 +37,10 @@ async def geocoder_adresse(adresse: str) -> GeocodageResult:
     props = feat["properties"]
     coords = feat["geometry"]["coordinates"]
 
-    if props["score"] < 0.4:
+    if props["score"] < 0.65:
         raise BanError(
-            f"Score de géocodage trop faible ({props['score']:.2f}) pour : {adresse!r}"
+            f"Adresse non reconnue (score {props['score']:.2f}). "
+            f"Essayez avec le code postal ou la ville : ex. «12 rue de la Paix, 75002 Paris»."
         )
 
     return GeocodageResult(
