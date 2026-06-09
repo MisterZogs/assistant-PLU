@@ -68,7 +68,7 @@ if __name__ == "__main__":
         print(f"     lon={r.lon}, lat={r.lat}")
 
         print("Test WFS zone PLU...")
-        z = await identifier_zone(r.lon, r.lat)
+        z = await identifier_zone(r.lon, r.lat, r.code_insee)
         print(f"  ✅ Zone {z.libelle} ({z.type_zone}) — doc GPU: {z.gpu_doc_id[:8]}...")
         print(f"     PDF: {z.nom_fichier}")
 
