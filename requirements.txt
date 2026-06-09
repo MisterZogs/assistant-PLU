@@ -10,3 +10,6 @@ pypdf
 mistralai>=2.4.0
 python-multipart
 fpdf2
+pyshp
+shapely
+pyproj
