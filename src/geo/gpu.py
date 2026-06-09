@@ -68,7 +68,7 @@ async def telecharger_reglement(
         return cache_path
 
     cache_path.parent.mkdir(parents=True, exist_ok=True)
-    zip_url = await _get_zip_url(doc_id, nom_pdf)
+    zip_url = await _get_zip_url(doc_id)
 
     with remotezip.RemoteZip(zip_url) as rz:
         names = rz.namelist()
