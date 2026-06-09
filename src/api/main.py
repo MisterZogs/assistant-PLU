@@ -149,7 +149,7 @@ async def get_zone(adresse: str):
         from ..geo.zone import identifier_zone
 
         geo = await geocoder_adresse(adresse)
-        zone = await identifier_zone(geo.lon, geo.lat)
+        zone = await identifier_zone(geo.lon, geo.lat, geo.code_insee)
         return {
             "adresse_normalisee": geo.label,
             "code_insee": geo.code_insee,
