@@ -1,9 +1,10 @@
-"""GPU API — liste et téléchargement des fichiers d'un document PLU."""
+"""GPU — téléchargement du règlement écrit PLU via remotezip."""
 
-import httpx
-import os
 from dataclasses import dataclass
 from pathlib import Path
+
+import httpx
+import remotezip
 
 
 GPU_BASE = "https://www.geoportail-urbanisme.gouv.fr"
@@ -38,12 +39,25 @@ def _nom_reglement(fichiers: list[FichierGPU]) -> str | None:
     return None
 
 
+async def _get_zip_url(doc_id: str, nom_pdf: str) -> str:
+    """Résout l'URL de redirection vers le ZIP du document GPU."""
+    url = f"{GPU_BASE}/api/document/{doc_id}/download?name={nom_pdf}&type=file"
+    async with httpx.AsyncClient(timeout=15, follow_redirects=False) as client:
+        resp = await client.get(url)
+    if resp.status_code in (301, 302, 307, 308):
+        return resp.headers["location"]
+    # Si pas de redirection, construire l'URL par convention
+    raise GpuError(f"Impossible d'obtenir l'URL du ZIP pour {doc_id}")
+
+
 async def telecharger_reglement(
-    doc_id: str, cache_dir: str = "./cache/pdfs"
+    doc_id: str,
+    idurba: str,
+    cache_dir: str = "./cache/pdfs",
 ) -> Path:
     """
-    Télécharge le règlement écrit d'un document GPU et le met en cache.
-    Utilise HTTP Range pour extraire uniquement le PDF depuis le ZIP.
+    Télécharge uniquement le règlement écrit PDF depuis le ZIP du GPU via remotezip.
+    Seuls les octets du PDF sont transférés (~quelques Mo au lieu de 282 Mo).
     """
     fichiers = await lister_fichiers(doc_id)
     nom_pdf = _nom_reglement(fichiers)
@@ -55,35 +69,19 @@ async def telecharger_reglement(
         return cache_path
 
     cache_path.parent.mkdir(parents=True, exist_ok=True)
-    url = f"{GPU_BASE}/api/document/{doc_id}/download?name={nom_pdf}&type=file"
+    zip_url = await _get_zip_url(doc_id, nom_pdf)
 
-    # Le serveur GPU retourne un ZIP — on le télécharge et on extrait le PDF
-    import tempfile, zipfile
-
-    async with httpx.AsyncClient(timeout=300, follow_redirects=True) as client:
-        async with client.stream("GET", url) as resp:
-            resp.raise_for_status()
-            with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as tmp:
-                tmp_path = tmp.name
-                async for chunk in resp.aiter_bytes(chunk_size=65536):
-                    tmp.write(chunk)
-
-    try:
-        with zipfile.ZipFile(tmp_path) as zf:
-            names = zf.namelist()
-            # Chercher le fichier règlement dans le ZIP
-            target = next((n for n in names if nom_pdf in n), None)
-            if not target:
-                # Chercher par nom de base
-                base = nom_pdf
-                target = next((n for n in names if n.endswith(base)), None)
-            if not target:
-                raise GpuError(
-                    f"{nom_pdf} introuvable dans le ZIP. Fichiers : {names[:10]}"
-                )
-            data = zf.read(target)
-    finally:
-        os.unlink(tmp_path)
+    with remotezip.RemoteZip(zip_url) as rz:
+        names = rz.namelist()
+        target = next((n for n in names if nom_pdf in n), None)
+        if not target:
+            base = nom_pdf
+            target = next((n for n in names if n.endswith(base)), None)
+        if not target:
+            raise GpuError(
+                f"{nom_pdf} introuvable dans le ZIP. Fichiers : {names[:10]}"
+            )
+        data = rz.read(target)
 
     cache_path.write_bytes(data)
     return cache_path
