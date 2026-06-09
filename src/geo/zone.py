@@ -70,7 +70,11 @@ async def _resolve_zip_url(gpu_doc_id: str) -> str:
 def _find_zone_in_shp(
     shp_data: bytes, dbf_data: bytes, shx_data: bytes, lon: float, lat: float
 ) -> dict:
-    """Point-in-polygon sur le shapefile ZONE_URBA (projection Lambert 93)."""
+    """Point-in-polygon sur le shapefile ZONE_URBA (projection Lambert 93).
+
+    Les champs peuvent être en majuscules (Biarritz) ou minuscules (Toulouse PLUi).
+    Retourne un dict avec clés normalisées en majuscules.
+    """
     transformer = Transformer.from_crs("EPSG:4326", "EPSG:2154", always_xy=True)
     x, y = transformer.transform(lon, lat)
     point = Point(x, y)
@@ -80,7 +84,8 @@ def _find_zone_in_shp(
         dbf=io.BytesIO(dbf_data),
         shx=io.BytesIO(shx_data),
     )
-    fields = [f[0] for f in sf.fields[1:]]
+    # Normalise les noms de champs en majuscules
+    fields = [f[0].upper() for f in sf.fields[1:]]
 
     for feat in sf.shapeRecords():
         geom = shape(feat.shape.__geo_interface__)
