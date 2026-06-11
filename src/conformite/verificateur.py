@@ -1,12 +1,12 @@
 """Vérification de conformité PLU : règles extraites × projet architecte → rapport."""
 
 import json
-from mistralai.client import Mistral
+import anthropic
 
 from .models import ReglesZone, ProjetArchitecte, RapportConformite, VerificationArticle
 
 
-MODEL = "mistral-large-latest"
+MODEL = "claude-sonnet-4-6"
 
 PROMPT_VERIFICATION = """\
 Tu es un expert en conformité PLU (Plan Local d'Urbanisme).
