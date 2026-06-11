@@ -82,7 +82,7 @@ async def verifier(req: VerificationRequest):
     texte_complet = extraire_texte(chemin_pdf)
     texte_zone = isoler_section_zone(texte_complet, zone.nom_fichier)
 
-    client = _get_mistral()
+    client = _get_anthropic()
     try:
         regles = await extraire_regles(
             texte_zone=texte_zone,
