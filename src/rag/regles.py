@@ -57,25 +57,23 @@ async def extraire_regles(
     texte_zone: str,
     commune: str,
     zone: str,
-    client: Mistral,
+    client: anthropic.AsyncAnthropic,
 ) -> ReglesZone:
-    """Appelle Mistral pour extraire les règles PLU structurées depuis le texte."""
+    """Appelle Claude pour extraire les règles PLU structurées depuis le texte."""
     prompt = PROMPT_EXTRACTION.format(
         commune=commune,
         zone=zone,
         texte_reglement=texte_zone,
     )
 
-    res = await client.chat.complete_async(
+    res = await client.messages.create(
         model=MODEL,
-        messages=[
-            {"role": "system", "content": "Tu es un expert en urbanisme français. Réponds uniquement en JSON valide."},
-            {"role": "user", "content": prompt},
-        ],
-        response_format={"type": "json_object"},
+        max_tokens=2048,
+        system="Tu es un expert en urbanisme français. Réponds uniquement en JSON valide.",
+        messages=[{"role": "user", "content": prompt}],
         temperature=0.0,
     )
 
-    raw = res.choices[0].message.content.strip()
+    raw = res.content[0].text.strip()
     data = json.loads(raw)
     return ReglesZone(**data)
