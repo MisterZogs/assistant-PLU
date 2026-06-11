@@ -3,7 +3,7 @@
 import os
 from pathlib import Path
 
-from mistralai.client import Mistral
+import anthropic
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
@@ -31,11 +31,11 @@ app.add_middleware(
 PDF_CACHE_DIR = os.getenv("PDF_CACHE_DIR", "./cache/pdfs")
 
 
-def _get_mistral() -> Mistral:
-    key = os.getenv("MISTRAL_API_KEY")
+def _get_anthropic() -> anthropic.AsyncAnthropic:
+    key = os.getenv("ANTHROPIC_API_KEY")
     if not key:
-        raise HTTPException(500, "MISTRAL_API_KEY non configurée")
-    return Mistral(api_key=key)
+        raise HTTPException(500, "ANTHROPIC_API_KEY non configurée")
+    return anthropic.AsyncAnthropic(api_key=key)
 
 
 # ── Schémas de requête ────────────────────────────────────────────────────────
