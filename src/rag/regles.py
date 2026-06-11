@@ -1,12 +1,12 @@
-"""Extraction structurée des règles PLU depuis le texte du règlement via Mistral."""
+"""Extraction structurée des règles PLU depuis le texte du règlement via Claude."""
 
 import json
-from mistralai.client import Mistral
+import anthropic
 
 from ..conformite.models import ReglesZone
 
 
-MODEL = "mistral-large-latest"
+MODEL = "claude-sonnet-4-6"
 
 PROMPT_EXTRACTION = """\
 Tu es un expert en droit de l'urbanisme français et en lecture de PLU (Plans Locaux d'Urbanisme).
