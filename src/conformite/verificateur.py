@@ -56,9 +56,9 @@ async def verifier_conformite(
     projet: ProjetArchitecte,
     adresse: str,
     id_urba: str,
-    client: Mistral,
+    client: anthropic.AsyncAnthropic,
 ) -> RapportConformite:
-    """Appelle Mistral pour vérifier la conformité du projet aux règles PLU."""
+    """Appelle Claude pour vérifier la conformité du projet aux règles PLU."""
     prompt = PROMPT_VERIFICATION.format(
         commune=regles.commune,
         zone=regles.zone,
@@ -78,17 +78,15 @@ async def verifier_conformite(
         nb_places=_fmt(projet.nb_places_stationnement),
     )
 
-    res = await client.chat.complete_async(
+    res = await client.messages.create(
         model=MODEL,
-        messages=[
-            {"role": "system", "content": "Tu es un expert en urbanisme français. Réponds uniquement en JSON valide."},
-            {"role": "user", "content": prompt},
-        ],
-        response_format={"type": "json_object"},
+        max_tokens=2048,
+        system="Tu es un expert en urbanisme français. Réponds uniquement en JSON valide.",
+        messages=[{"role": "user", "content": prompt}],
         temperature=0.0,
     )
 
-    raw = res.choices[0].message.content.strip()
+    raw = res.content[0].text.strip()
     data = json.loads(raw)
     verifications = [VerificationArticle(**v) for v in data["verifications"]]
 
