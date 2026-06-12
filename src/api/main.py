@@ -108,6 +108,9 @@ async def verifier(req: VerificationRequest):
     except Exception as e:
         raise HTTPException(500, f"Erreur vérification conformité : {e}")
 
+    rapport.lat = geo_result.geocodage.lat
+    rapport.lon = geo_result.geocodage.lon
+
     return VerificationResponse(
         zone_info=ZoneInfo(
             zone=zone.libelle,
