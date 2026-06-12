@@ -74,6 +74,20 @@ async def extraire_regles(
         temperature=0.0,
     )
 
+    if not res.content or not hasattr(res.content[0], "text"):
+        raise ValueError(f"Réponse Claude vide ou inattendue. stop_reason={res.stop_reason}")
+
     raw = res.content[0].text.strip()
+
+    # Retirer le markdown si Claude l'a ajouté (```json ... ```)
+    if raw.startswith("```"):
+        raw = raw.split("```")[1]
+        if raw.startswith("json"):
+            raw = raw[4:]
+        raw = raw.strip()
+
+    if not raw:
+        raise ValueError(f"Réponse Claude vide après nettoyage. stop_reason={res.stop_reason}")
+
     data = json.loads(raw)
     return ReglesZone(**data)
