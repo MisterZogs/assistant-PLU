@@ -85,6 +85,8 @@ class RapportConformite(BaseModel):
     id_urba: str
     date_document_plu: str
     verifications: list[VerificationArticle]
+    lat: Optional[float] = None
+    lon: Optional[float] = None
 
     @property
     def statut_global(self) -> StatutConformite:
