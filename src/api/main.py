@@ -80,7 +80,11 @@ async def verifier(req: VerificationRequest):
     chemin_pdf = geo_result.chemin_reglement
 
     texte_complet = extraire_texte(chemin_pdf)
-    texte_zone = isoler_section_zone(texte_complet, zone.nom_fichier)
+    # Utilise zone.libelle (ex: "UE") pour trouver la section dans le règlement écrit.
+    # zone.nom_fichier peut pointer vers le PDF graphique (plan) ou contenir "fichier.pdf#zone",
+    # mais zone.libelle est toujours le code zone réel.
+    zone_id = zone.nom_fichier if "#" in (zone.nom_fichier or "") else zone.libelle
+    texte_zone = isoler_section_zone(texte_complet, zone_id)
 
     client = _get_anthropic()
     try:
