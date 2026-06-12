@@ -148,6 +148,19 @@ def generer_rapport_pdf(rapport: RapportConformite) -> bytes:
     pdf._info_ligne("Date du rapport :",   date.today().strftime("%d/%m/%Y"), fill=True)
     pdf.ln(5)
 
+    # ── Vue satellite ─────────────────────────────────────────────────────────
+    if rapport.lat and rapport.lon:
+        img_bytes = _image_satellite_ign(rapport.lat, rapport.lon)
+        if img_bytes:
+            pdf._section("Vue satellite du terrain")
+            pdf.image(BytesIO(img_bytes), x=18, w=174, h=65)
+            pdf.set_font("DejaVu", "I", 7)
+            pdf.set_text_color(*_GRIS_TEXTE)
+            pdf.cell(0, 4, "© IGN — Géoportail France (ORTHOIMAGERY.ORTHOPHOTOS)", align="R",
+                     new_x="LMARGIN", new_y="NEXT")
+            pdf.set_text_color(*_NOIR)
+            pdf.ln(4)
+
     # ── Résultat global ───────────────────────────────────────────────────────
     pdf._section("Résultat global")
     statut_global = rapport.statut_global
