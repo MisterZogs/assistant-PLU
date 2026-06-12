@@ -154,6 +154,8 @@ async def get_zone(adresse: str):
             "adresse_normalisee": geo.label,
             "code_insee": geo.code_insee,
             "commune": geo.city,
+            "lat": geo.lat,
+            "lon": geo.lon,
             "zone": zone.libelle,
             "type_zone": zone.type_zone,
             "id_urba": zone.id_urba,
