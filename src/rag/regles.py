@@ -68,7 +68,7 @@ async def extraire_regles(
 
     res = await client.messages.create(
         model=MODEL,
-        max_tokens=2048,
+        max_tokens=4096,
         system="Tu es un expert en urbanisme français. Réponds uniquement en JSON valide.",
         messages=[{"role": "user", "content": prompt}],
         temperature=0.0,
