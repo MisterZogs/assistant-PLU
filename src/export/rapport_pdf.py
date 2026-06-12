@@ -1,10 +1,12 @@
 """Génération du rapport de conformité PLU en PDF via fpdf2."""
 
 from __future__ import annotations
+import math
 from datetime import date
 from io import BytesIO
 from pathlib import Path
 
+import httpx
 from fpdf import FPDF
 from fpdf.table import FontFace
 
