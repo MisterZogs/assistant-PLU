@@ -104,6 +104,33 @@ class RapportPDF(FPDF):
         self.cell(0, 6, valeur, fill=fill, new_x="LMARGIN", new_y="NEXT")
 
 
+# ── Image satellite IGN ───────────────────────────────────────────────────────
+
+def _image_satellite_ign(lat: float, lon: float, largeur_km: float = 0.40) -> bytes | None:
+    """Télécharge l'orthophoto IGN (Géoportail) autour du point. Retourne None si indisponible."""
+    delta_lat = (largeur_km * 0.75) / 111.0
+    delta_lon = largeur_km / (111.0 * abs(math.cos(math.radians(lat))))
+    # WMS 1.3.0 EPSG:4326 → BBOX = latMin,lonMin,latMax,lonMax
+    bbox = f"{lat - delta_lat},{lon - delta_lon},{lat + delta_lat},{lon + delta_lon}"
+    url = (
+        "https://data.geopf.fr/wms-r/wms"
+        "?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap"
+        "&LAYERS=ORTHOIMAGERY.ORTHOPHOTOS&STYLES="
+        "&FORMAT=image/jpeg"
+        f"&BBOX={bbox}"
+        "&WIDTH=800&HEIGHT=300&CRS=EPSG:4326"
+    )
+    try:
+        with httpx.Client(timeout=12) as client:
+            resp = client.get(url)
+            ct = resp.headers.get("content-type", "")
+            if resp.status_code == 200 and "image" in ct:
+                return resp.content
+    except Exception:
+        pass
+    return None
+
+
 # ── Fonction principale ───────────────────────────────────────────────────────
 
 def generer_rapport_pdf(rapport: RapportConformite) -> bytes:
