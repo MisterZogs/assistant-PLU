@@ -89,7 +89,8 @@ def isoler_section_zone(texte: str, zone_libelle: str) -> str:
         return texte[:60_000]
 
     start = match.start()
-    zone_code = re.match(r"[A-Za-z]+", zone).group(0).upper()
+    m2 = re.match(r"[A-Za-z]+", zone)
+    zone_code = m2.group(0).upper() if m2 else zone.upper()
 
     # Délimiter la fin : première "ZONE {autre_code}" sur une ligne
     # (ignorer les répétitions de la même zone qui sont des en-têtes de page)
