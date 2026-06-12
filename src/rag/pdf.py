@@ -34,8 +34,8 @@ def _prefixe_zone(zone: str) -> str:
     Retourne le préfixe générique de la zone pour la recherche de section.
     Ex: 'UAs' → 'UA', 'NCU' → 'N' puis 'NCU', 'UB' → 'UB'.
     """
-    # Chercher d'abord la correspondance exacte, puis le préfixe lettres seules
-    return re.match(r"[A-Za-z]+", zone).group(0)
+    m = re.match(r"[A-Za-z]+", zone)
+    return m.group(0) if m else zone
 
 
 def isoler_section_zone(texte: str, zone_libelle: str) -> str:
